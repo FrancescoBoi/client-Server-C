@@ -46,5 +46,5 @@ $(OBJDIR)/%.o: $(SOURCEDIR)/%.c Makefile | $(OBJDIR)
 $(OBJDIRCOMMON):
 	mkdir -p $(OBJDIRCOMMON)
 
-$(OBJDIRCOMMON)/%.o: $(COMMONDIR)/Makefile | $(OBJDIRCOMMON)
+$(OBJDIRCOMMON)/%.o: $(COMMONDIR)/%.c $(COMMONDIR)/Makefile | $(OBJDIRCOMMON)
 	+$(MAKE) -C $(COMMONDIR)

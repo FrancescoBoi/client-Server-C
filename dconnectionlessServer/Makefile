@@ -18,7 +18,7 @@ DEPENDSCOMMON := $(patsubst $(COMMONDIR)/%.c,$(OBJDIRCOMMON)/%.d, $(SOURCESCOMMO
 WARNING := -Wall -Wextra
 
 # OBJS_LOC is in current working directory,
-EXECUTABLE := ../server
+EXECUTABLE := ../serverConnectionless
 # .PHONY means these rules get executed even if
 # files of those names exist.
 .PHONY: all clean

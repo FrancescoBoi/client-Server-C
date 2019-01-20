@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include "../common/error.h"
+#include <signal.h>
 #define BUFLEN  128
 #define TIMEOUT 20
 #ifndef HOST_NAME_MAX
@@ -15,7 +16,8 @@
 
 //int connect_retry(int, int, int, const struct sockaddr *, socklen_t);
 
-void print_uptime(int sockfd);
+void print_uptime(int sockfd, struct addrinfo *aip);
+void sigalrm(int signo);
 
 int main(int argc, char *argv[])
 {
@@ -26,9 +28,11 @@ int main(int argc, char *argv[])
     int     sockfd, err;
     int n;
     struct sigaction sa;
+    char *host;
 
     if (argc != 2)//not needed any more but keep it for consistency
-        err_quit("usage: ruptime hostname");
+        //err_quit("usage: ruptime hostname");
+        printf("no argument passed but thats ok cuz im using 127.0.01 anyway\n");
     if ((n = sysconf(_SC_HOST_NAME_MAX))<0)
     {
         n = HOST_NAME_MAX;
@@ -65,17 +69,19 @@ int main(int argc, char *argv[])
     for (aip = ailist; aip != NULL; aip = aip->ai_next)
     {
         printf("Trying a connection\n");
-        if ((sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0,
-        aip->ai_addr, aip->ai_addrlen)) < 0)
+        /*if ((sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0,
+        aip->ai_addr, aip->ai_addrlen)) < 0)*/
+        if((sockfd = socket(aip->ai_family, SOCK_DGRAM,0))<0)
         {
             err = errno;
         }
         else
         {
-            print_uptime(sockfd);
+            print_uptime(sockfd, aip);
             exit(0);
         }
     }
+    fprintf(stderr, "can't contact \"127.0.0.1\": %s\n", strerror(err));
     err_exit(err, "can’t connect to %s", argv[1]);
 }
 
@@ -108,38 +114,3 @@ void sigalrm(int signo)
 {
 
 }
-
-/*
-int connect_retry(int domain, int type, int protocol,
-              const struct sockaddr *addr, socklen_t alen)
-{
-    int numsec, fd;
-    /*
-     * Try to connect with exponential backoff.
-     */
-    /*for (numsec = 1; numsec <= MAXSLEEP; numsec <<= 1)
-    {
-        printf("Trying\n");
-        if ((fd = socket(domain, type, protocol)) < 0)
-        {
-            return(-1);
-        }
-        if (connect(fd, addr, alen) == 0)
-        {
-                /*
-                 * Connection accepted.
-                 */
-            /*printf("Connected\n");
-            return(fd);
-        }
-        close(fd);
-            /*
-             * Delay before trying again.
-             */
-        /*if (numsec <= MAXSLEEP/2)
-            sleep(numsec);
-    }
-    printf("\n\n");
-    return(-1);
-}
-*/

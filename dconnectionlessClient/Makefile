@@ -26,7 +26,7 @@ DEPENDSCOMON  := $(patsubst $(COMMONDIR)/%.c,$(OBJDIRCOMMON)/%.d, $(SOURCESCOMMO
 # ADD MORE WARNINGS!
 WARNING := -Wall -Wextra
 
-EXECUTABLE := ../client
+EXECUTABLE := ../clientConnectionless
 
 # .PHONY means these rules get executed even if
 # files of those names exist.

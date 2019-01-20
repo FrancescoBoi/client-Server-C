@@ -13,7 +13,7 @@
 
 #define BUFLEN 128
 #define QLEN 10
-
+#define MAXADDRLEN 256
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 156
 #endif
@@ -22,6 +22,7 @@ int initserver(int type, const struct sockaddr *addr, socklen_t alen, int qlen);
 
 void serve(int sockfd);
 void serve2(int sockfd);
+void serveConnectionless(int sockfd);
 
 int main(int argc, char* argv[])
 {
@@ -95,7 +96,7 @@ int main(int argc, char* argv[])
        list is set to point to the official name of the host.*/
     //hint.ai_flags = AI_CANONNAME;
     hint.ai_flags |= AI_PASSIVE;
-    hint.ai_socktype = SOCK_STREAM;
+    hint.ai_socktype = SOCK_DGRAM;
     hint.ai_addr = NULL;
     hint.ai_next = NULL;
     /*If the AI_PASSIVE flag is specified in hints.ai_flags, and node is
@@ -135,16 +136,62 @@ int main(int argc, char* argv[])
     }
     for (aip = ailist; aip!=NULL; aip = aip->ai_next)
     {
-        if ((sockfd = initserver(SOCK_STREAM, aip->ai_addr, aip->ai_addrlen, QLEN))>=0)
+        if ((sockfd = initserver(SOCK_DGRAM, aip->ai_addr, aip->ai_addrlen, QLEN))>=0)
         {
             //printf("starting to serve\n");
-            serve2(sockfd);
+            serveConnectionless(sockfd);
             printf("Exiting \n");
             exit(0);
         }
     }
     exit(1);
 }
+
+
+void serveConnectionless(int sockfd)
+{
+    int n;
+    socklen_t alen;
+    FILE *fp;
+    char buf[BUFLEN];
+    char abuf[MAXADDRLEN];
+    struct sockaddr *addr = (struct sockaddr*)abuf;
+    for(;;)
+    {
+        alen = MAXADDRLEN;
+        if((n=recvfrom(sockfd, buf, BUFLEN, 0, addr, &alen))<0)
+        {
+            syslog(LOG_ERR, "ruptimed: recvfrom error %s", strerror(errno));
+            exit(1);
+        }
+        /**pg. 542 Since a common operation is to create a pipe to another process
+        to either read its output or write its input stdio has provided popen and
+        pclose: popen creates pipe, close the unused ends of the pipe,
+        forks a child and call exec to execute cmdstr and
+        returns a file pointer (connected to std output if "r", to stdin if "w").
+        pclose closes the stream, waits for the command to terminate*/
+        if ((fp = popen("../../../Desktop/openCV", "r")) == NULL)
+        {
+            /*sprintf copy the string passed as second parameter inside buf*/
+            sprintf(buf, "error: %s\n", strerror(errno));
+            /*pag 610. send is similar to write. send(int sockfd, const void *buf, size_t nbytes, it flags)*/
+            //send(clfd, buf, strlen(buf),0);
+            sendto(sockfd, buf, strlen(buf),0, addr, alen);
+        }
+        else
+        {
+            /*get data from the pipe that reads created to exec /usr/bin/uptime */
+            if(fgets(buf, BUFLEN, fp)!=NULL)
+            {
+                sendto(sockfd, buf, strlen(buf),0, addr, alen);
+            }
+            /*see popen pag. 542*/
+            pclose(fp);
+        }
+        //close(clfd);
+    }
+}
+
 
 void serve(int sockfd)
 {
