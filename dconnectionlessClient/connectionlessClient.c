@@ -9,7 +9,7 @@
 #include "../common/error.h"
 #include <signal.h>
 #define BUFLEN  128
-#define TIMEOUT 20
+#define TIMEOUT 200
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 156
 #endif

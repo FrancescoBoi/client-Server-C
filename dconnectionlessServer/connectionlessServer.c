@@ -170,7 +170,7 @@ void serveConnectionless(int sockfd)
         forks a child and call exec to execute cmdstr and
         returns a file pointer (connected to std output if "r", to stdin if "w").
         pclose closes the stream, waits for the command to terminate*/
-        if ((fp = popen("../../../Desktop/openCV", "r")) == NULL)
+        if ((fp = popen("/home/fra/Desktop/openCV", "r")) == NULL)
         {
             /*sprintf copy the string passed as second parameter inside buf*/
             sprintf(buf, "error: %s\n", strerror(errno));
