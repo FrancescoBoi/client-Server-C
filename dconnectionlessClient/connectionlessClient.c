@@ -9,7 +9,7 @@
 #include "../common/error.h"
 #include <signal.h>
 #define BUFLEN  128
-#define TIMEOUT 200
+#define TIMEOUT 10
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 156
 #endif
@@ -97,15 +97,38 @@ void print_uptime(int sockfd, struct addrinfo *aip)
        err_sys("sendto err");
    }
    //When the timer expires, SIGALRM is generated
-   alarm(TIMEOUT);
-   if ((n=recvfrom(sockfd, buf, BUFLEN, 0, NULL, NULL))<0)
+
+   do
+   {
+       alarm(TIMEOUT);
+       //printf("recv again\n");
+       n =recvfrom(sockfd, buf, BUFLEN, 0, NULL, NULL);
+       printf("n = %d\n", n);
+       if (n<0)
+       {
+           if (errno !=EINTR)
+           {
+               alarm(0);
+           }
+           err_sys("recv error");
+           break;
+       }
+       if (buf[0]=='\0')//null char
+       {
+           //printf("n=%d Client exited cleanly: %d\n", n, (int)(buf[0]) );
+           break;
+       }
+       write(STDOUT_FILENO, buf, n);
+
+   }while(n>0);
+   /*if ((n=recvfrom(sockfd, buf, BUFLEN, 0, NULL, NULL))<0)
    {
        if (errno !=EINTR)
        {
            alarm(0);
        }
        err_sys("recv error");
-   }
+   }*/
    alarm(0);
    write(STDOUT_FILENO, buf, n);
 }
