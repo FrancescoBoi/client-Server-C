@@ -6,6 +6,8 @@ all:
 	+$(MAKE) -C dconnectionlessClient
 	+$(MAKE) -C dimgClient
 	+$(MAKE) -C dimgServer
+	+$(MAKE) -C imgTransferC/childDB
+	+$(MAKE) -C imgTransferC/childP
 
 clean:
 	$(RM) client server common/obj/* dserver/obj/* dclient/obj/*

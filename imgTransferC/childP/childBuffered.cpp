@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
         cout << "\nCould not open reference " << 0 << endl;
         return -1;
     }
-    for (int i=0; i<5; i++)
+    for (int i=0; i<2; i++)
     {
         cam>>frame;
     }
