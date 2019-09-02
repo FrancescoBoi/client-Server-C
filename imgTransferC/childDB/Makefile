@@ -28,13 +28,13 @@ WARNING := -Wall -Wextra
 
 # The first rule is the default, ie. "make",
 # "make all" and "make parking" mean the same
-all: openCV
+all: openCVClient
 
 clean:
-	$(RM) $(OBJECTS) $(DEPENDS) openCV
+	$(RM) $(OBJECTS) $(DEPENDS) openCVClient
 
 # Linking the executable from the object files
-openCV: $(OBJECTS)
+openCVClient: $(OBJECTS)
 	$(CXX) $(WARNING) $(CXXFLAGS) $(INC_PATH) $^ -o $@ $(LIBS)
 
 -include $(DEPENDS)

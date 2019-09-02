@@ -230,6 +230,7 @@ void serveImg(int sockfd)
     set_cloexec(sockfd);
     for(;;)
     {
+        bytes2Copy = BUFLEN;
         total_bytes_read = 0;
         elRead =0;
         memset(temp, 0, 10);
@@ -259,7 +260,7 @@ void serveImg(int sockfd)
             exit(1);
         }
         //if ((pid = fork())<0)
-        if ((fp = popen("/home/fra/Desktop/imgTransferC/childP/openCV", "r")) == NULL)
+        if ((fp = popen("./imgTransferC/childP/openCV", "r")) == NULL)
         {
             syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));
             exit(1);
@@ -305,12 +306,16 @@ void serveImg(int sockfd)
         printf("Trying to read...\n");
         elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
         printf("Read...\n");
-        printf("%lu\n", bytesToRead);
+        printf("bytesToRead: %lu\n", bytesToRead);
+        printf("bytes2Copy before %lu\n", bytes2Copy);
         total_bytes_read += elRead*bytes2Copy;
         bytes2Copy = bytesToRead-total_bytes_read;
-        elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
-        total_bytes_read += elRead*bytes2Copy;
-        /*see popen pag. 542*/
+        if(bytes2Copy>0)
+        {
+          printf("bytes2Copy after first read %lu\n", bytes2Copy);
+          elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
+          total_bytes_read += elRead*bytes2Copy;
+        }/*see popen pag. 542*/
         printf("bytes read: %ld over %ld\n", total_bytes_read, bytesToRead);
         pclose(fp);
         while(bytes_sent<total_bytes_read)

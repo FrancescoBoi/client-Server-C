@@ -12,40 +12,47 @@ int main(int argc, char *argv[])
     FILE *fp = fdopen(STDIN_FILENO, "r");
     cv::Mat frame;
     char temp[10] ={0};
-    size_t bytes_read_tihs_loop = 0;
+    //size_t bytes_read_tihs_loop = 0;
     size_t total_bytes_read = 0;
     size_t total_bytesToRead;
     unsigned short int elRead = 0;
     size_t bytes2Copy = BUFLEN;
-    if (fread(temp, 10, 1, fp)!=1)
-    {
-        printf("error trying to read size");
-        return 1;
-    }
-    total_bytesToRead = atoi((char*)temp); //115715;
-    //allocate memory where to store encoded iamge data that will be received
-    u_char *buf = (u_char*)malloc(total_bytesToRead*sizeof(u_char));
-
-    //initialize the number of bytes read to 0
-    printf ("child process total_bytesToRead: %ld\n",total_bytesToRead);
-    while(total_bytes_read<total_bytesToRead)
-    {
-        if((elRead = fread(buf+total_bytes_read, bytes2Copy, 1, fp))!=1)
-        {
-            printf("error elRead!=1, elRead=%ld\n", elRead);
-            return 0;
-        }
-        total_bytes_read += elRead*bytes2Copy;
-        //printf("child bytes copied=%ld\n", elRead*bytes2Copy);
-        bytes2Copy = BUFLEN<(total_bytesToRead-total_bytes_read)? BUFLEN : (total_bytesToRead-total_bytes_read);
-        //printf("child total bytes read=%ld, bytes to be copied at next iter: %ld\n\n", total_bytes_read, bytes2Copy);
-
-    }
-    printf("child all bytes read\n");
     cv::namedWindow( "win", cv::WINDOW_AUTOSIZE );
-    frame  = cv::imdecode(cv::Mat(3,total_bytes_read,CV_8UC3, buf), 1);
-    cv::imshow("win", frame);
-    cv::waitKey(0);
+    while(1)
+    {
+        temp[10] ={0};
+        total_bytes_read = 0;
+        elRead = 0;
+        bytes2Copy = BUFLEN;
+        if (fread(temp, 10, 1, fp)!=1)
+        {
+            printf("error trying to read size");
+            return 1;
+        }
+        total_bytesToRead = atoi((char*)temp); //115715;
+        //allocate memory where to store encoded iamge data that will be received
+        u_char *buf = (u_char*)malloc(total_bytesToRead*sizeof(u_char));
+
+        //initialize the number of bytes read to 0
+        printf ("child process total_bytesToRead: %ld\n",total_bytesToRead);
+        while(total_bytes_read<total_bytesToRead)
+        {
+          if((elRead = fread(buf+total_bytes_read, bytes2Copy, 1, fp))!=1)
+          {
+              printf("error elRead!=1, elRead=%ld\n", elRead);
+              return 0;
+            }
+            total_bytes_read += elRead*bytes2Copy;
+            //printf("child bytes copied=%ld\n", elRead*bytes2Copy);
+            bytes2Copy = BUFLEN<(total_bytesToRead-total_bytes_read)? BUFLEN : (total_bytesToRead-total_bytes_read);
+            //printf("child total bytes read=%ld, bytes to be copied at next iter: %ld\n\n", total_bytes_read, bytes2Copy);
+
+          }
+          printf("child all bytes read\n");
+          frame  = cv::imdecode(cv::Mat(3,total_bytes_read,CV_8UC3, buf), 1);
+          cv::imshow("win", frame);
+          cv::waitKey(50);
+    }
     std::cout<<"Returning\n";
     pclose(fp);
     return 0;

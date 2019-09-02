@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include "../common/error.h"
+#include <signal.h>
 #define BUFLEN      128
 #define MAXSLEEP 128
 #ifndef HOST_NAME_MAX
@@ -16,13 +17,13 @@
 int connect_retry(int, int, int, const struct sockaddr *, socklen_t);
 
 void print_uptime(int sockfd);
-void showImg(int sockfd);
+void showImg(int sockfd, FILE* fp);
 
 int main(int argc, char *argv[])
 {
     char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
     putenv(str);
-
+    FILE* fp;
     char *host;
     struct addrinfo *ailist, *aip;
     struct addrinfo hint;
@@ -58,14 +59,26 @@ int main(int argc, char *argv[])
     {
         printf("Trying a connection\n");
         if ((sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0,
-        aip->ai_addr, aip->ai_addrlen)) < 0)
+            aip->ai_addr, aip->ai_addrlen)) < 0)
         {
             err = errno;
         }
         else
         {
+            if ((fp = popen("./imgTransferC/childDB/openCVClient", "w")) == NULL)
+            {
+                //error
+                printf("forkin error\n");
+                return;
+              }
             //print_uptime(sockfd);
-            showImg(sockfd);
+            while(1)
+            {
+              showImg(sockfd, fp);
+              sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0,
+                aip->ai_addr, aip->ai_addrlen);
+            }
+            pclose(fp);
             exit(0);
         }
     }
@@ -83,7 +96,7 @@ void print_uptime(int sockfd)
        err_sys("recv error");
 }
 
-void showImg(int sockfd)
+void showImg(int sockfd, FILE *fp)
 {
     int     n;
     u_char    buf[BUFLEN];
@@ -91,50 +104,45 @@ void showImg(int sockfd)
     size_t bytesToReceive = BUFLEN;
     size_t total_bytes = 0;
     u_char *img;
-    FILE *fp;
     buf[0] = 0;
-    printf("Forking...\n");
-    if ((fp = popen("/home/fra/Desktop/imgTransferC/childDB/openCV", "w")) == NULL)
-    {
-        //error
-        printf("forkin error\n");
-        return;
-    }
+    //printf("Forking...\n");
+    //char pidline[1024];
+    //pid_t pid;
+    //FILE *fp_pid = popen("pidof openCVClient","r");
+    //fgets(pidline,1024,fp_pid);
+    //printf("pid: %s\n");
+
+    //printf("pidline: %s",pidline);
+    //pid = strtol (pidline, NULL, 10);
+    //pclose(fp_pid);
+
     if (send(sockfd, buf, strlen(buf), 0 )<0)
     {
         err_sys("sendto err");
     }
-     n = recv(sockfd, buf, BUFLEN, 0);
-     total_bytes = atoi((char*)buf);
-     if(fwrite(buf, 10, 1, fp)!=1)
-     {
-         printf("error sending size to client child\n");
-         return;
-     }
-     if (n < 0)
-     {
-           err_sys("recv error");
-     }
-     total_bytes = atoi((char*)buf);
+    n = recv(sockfd, buf, BUFLEN, 0);
+    total_bytes = atoi((char*)buf);
+    if(fwrite(buf, 10, 1, fp)!=1)
+    {
+        printf("error sending size to client child\n");
+        return;
+    }
+    if (n < 0)
+    {
+        err_sys("recv error");
+    }
+    total_bytes = atoi((char*)buf);
 
-     printf("Converted valueeeee for expected size: %lu\n", total_bytes);
-     img = malloc(total_bytes*sizeof(u_char));
+    img = malloc(total_bytes*sizeof(u_char));
+    printf("Converted valueeeee for expected size: %lu\n", total_bytes);
 
-     while(read<total_bytes)
-     {
-       //alarm(TIMEOUT);
-           //printf("recv again\n");
-           n = recv(sockfd, img+read, bytesToReceive, 0 );
-           read += n;// to keep the defensive if later
-           /*
-           if(fwrite(buf, n, 1, fp)!=1)
-           {
-               printf("error sending size, exiting program\n");
-               return;
-           }*/
-           bytesToReceive = (total_bytes-read)<BUFLEN ? (total_bytes-read) : BUFLEN;
-           if (n<0)
-           {
+    while(read<total_bytes)
+    {
+         n = recv(sockfd, img+read, bytesToReceive, 0 );
+         read += n;// to keep the defensive if later
+         bytesToReceive = (total_bytes-read)<BUFLEN ? (total_bytes-read) : BUFLEN;
+         if (n<0)
+         {
                if (errno !=EINTR)
                {
                    alarm(0);
@@ -160,22 +168,15 @@ void showImg(int sockfd)
                printf("error sending size, exiting program\n");
                return;
            }
-           //sleep(1);
            sent += is_sent*n;
            n = BUFLEN<(total_bytes-sent) ? BUFLEN:(total_bytes-sent);
-           //printf("parent: sent %ld bytes over %ld\n", sent, total_bytes);
        }
-       /*if ((n=recvfrom(sockfd, buf, BUFLEN, 0, NULL, NULL))<0)
-       {
-           if (errno !=EINTR)
-           {
-               alarm(0);
-           }
-           err_sys("recv error");
-       }*/
        printf("Waiting for child...\n");
-       pclose(fp);
-       printf("reaching end freeing img\n");
+       //sleep(10);
+       //kill(pid, SIGKILL);
+       //printf("papppo\n");
+       //printf("pipppo\n");
+       printf("reaching en  d freeing img\n");
        free(img);
 }
 
