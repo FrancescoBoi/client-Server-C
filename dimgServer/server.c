@@ -25,12 +25,16 @@ void serve2(int sockfd);
 void serveImg(int sockfd);
 FILE * custom_popen(char* command, char type, pid_t* pid);
 int custom_pclose(FILE * fp, pid_t pid);
+void clearSignal();
+
+/*GLOBAL VARIABLES*/
+pid_t pid_openCV;
+/*END GLOBALS*/
+
+
 
 int main(int argc, char* argv[])
 {
-  /*pid_t pid_openCV;
-  FILE *fp_openCV;// = popen("pidof openCVC","r");
-  char pidline[1024];*/
     char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
     putenv(str);
     /*The C data structure used to represent addresses and hostnames within
@@ -151,13 +155,6 @@ int main(int argc, char* argv[])
             exit(0);
         }
     }
-    /*fp_openCV = popen("pidof openCV","r");
-    memset(pidline,0,1024);
-    fgets(pidline,1024,pid_openCV);
-    pid_openCV = -1;
-    pid_openCV = strtol (pidline, NULL, 10);
-    printf("Tryng to kill %s\n", pidline);
-    kill(pid_openCV, SIGKILL);*/
     exit(1);
 }
 
@@ -229,7 +226,6 @@ void serve(int sockfd)
 void serveImg(int sockfd)
 {
     int clfd;
-    pid_t pid_openCV;
     FILE *fp;
     //char buf[BUFLEN];
 
@@ -276,6 +272,7 @@ void serveImg(int sockfd)
             syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));
             exit(1);
         }
+        signal(SIGINT, clearSignal);
         printf("pchild returned from popen %d\n", pid_openCV);
         /*else if (pid == 0) //CHILD
         {*/
@@ -542,4 +539,11 @@ int custom_pclose(FILE * fp, pid_t pid)
     }
 
     return stat;
+}
+
+void clearSignal()
+{
+  printf("Killing %d\n", pid_openCV);
+  kill(pid_openCV, SIGKILL);
+  exit(0);
 }
