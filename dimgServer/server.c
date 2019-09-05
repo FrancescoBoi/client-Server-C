@@ -23,12 +23,16 @@ int initserver(int type, const struct sockaddr *addr, socklen_t alen, int qlen);
 void serve(int sockfd);
 void serve2(int sockfd);
 void serveImg(int sockfd);
+FILE * custom_popen(char* command, char type, pid_t* pid);
+int custom_pclose(FILE * fp, pid_t pid);
 
 int main(int argc, char* argv[])
 {
+  /*pid_t pid_openCV;
+  FILE *fp_openCV;// = popen("pidof openCVC","r");
+  char pidline[1024];*/
     char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
     putenv(str);
-    printf("entered main\n");
     /*The C data structure used to represent addresses and hostnames within
     the networking API is the following*/
     struct addrinfo *ailist, *aip, hint;
@@ -147,6 +151,13 @@ int main(int argc, char* argv[])
             exit(0);
         }
     }
+    /*fp_openCV = popen("pidof openCV","r");
+    memset(pidline,0,1024);
+    fgets(pidline,1024,pid_openCV);
+    pid_openCV = -1;
+    pid_openCV = strtol (pidline, NULL, 10);
+    printf("Tryng to kill %s\n", pidline);
+    kill(pid_openCV, SIGKILL);*/
     exit(1);
 }
 
@@ -218,20 +229,18 @@ void serve(int sockfd)
 void serveImg(int sockfd)
 {
     int clfd;
-    //pid_t pid;
+    pid_t pid_openCV;
     FILE *fp;
     //char buf[BUFLEN];
+
     /*VARIABLE FOR READING IMAGE*/
     char temp[10] ={0};
-    size_t total_bytes_read;
     unsigned short int elRead;
-    size_t bytes2Copy = BUFLEN;
-    size_t bytes_sent;
+    size_t bytes_sent, toSend=BUFLEN;
+    ssize_t currSent;
     set_cloexec(sockfd);
     for(;;)
     {
-        bytes2Copy = BUFLEN;
-        total_bytes_read = 0;
         elRead =0;
         memset(temp, 0, 10);
         bytes_sent = 0;
@@ -260,13 +269,16 @@ void serveImg(int sockfd)
             exit(1);
         }
         //if ((pid = fork())<0)
-        if ((fp = popen("./imgTransferC/childP/openCV", "r")) == NULL)
+        //FILE * custom_popen(char* command, char type, pid_t* pid);
+        if ((fp = custom_popen("./imgTransferC/childP/openCV", 'r', &pid_openCV)) == NULL)
+        //if ((fp = popen("./imgTransferC/childP/openCV", "r")) == NULL)
         {
             syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));
             exit(1);
         }
+        printf("pchild returned from popen %d\n", pid_openCV);
         /*else if (pid == 0) //CHILD
-        {
+        {*/
             /*The parent called daemonize (Figure 13.1), so STDIN_FILENO,
              STDOUT_FILENO, and STDERR_FILENO are already open to /dev/NULL
              Thus the call to close does not need to be protected by checks that
@@ -288,41 +300,65 @@ void serveImg(int sockfd)
             //close(clfd);
             //waitpid(pid, &status, 0);
         //}
-        printf("Process started\n");
+        printf("Process started\n");*/
         /*get data from the pipe that reads created to exec /usr/bin/uptime */
         //read the number of btyes of encoded image data
-        fgets(temp, 10, fp);
-        printf("Trying to send size\n");
-        send(clfd, temp, 10, 0);
-        //send(clfd, buf, strlen(buf),0);
-        //convert the string to int
-        size_t bytesToRead = atoi((char*)temp);
-        //allocate memory where to store encoded iamge data that will be received
-        u_char *buf = (u_char*)malloc(bytesToRead*sizeof(u_char));
-        printf("allocated: %s\n", temp);
-        printf("allocated (int): %lu\n", bytesToRead);
-        //initialize the number of bytes read to 0
-        //printf ("bytesToRead: %ld\n",bytesToRead);
-        printf("Trying to read...\n");
-        elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
-        printf("Read...\n");
-        printf("bytesToRead: %lu\n", bytesToRead);
-        printf("bytes2Copy before %lu\n", bytes2Copy);
-        total_bytes_read += elRead*bytes2Copy;
-        bytes2Copy = bytesToRead-total_bytes_read;
-        if(bytes2Copy>0)
+        u_char *buf;
+        while(1)
         {
-          printf("bytes2Copy after first read %lu\n", bytes2Copy);
-          elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
-          total_bytes_read += elRead*bytes2Copy;
-        }/*see popen pag. 542*/
-        printf("bytes read: %ld over %ld\n", total_bytes_read, bytesToRead);
-        pclose(fp);
-        while(bytes_sent<total_bytes_read)
-        {
-            //bytes_sent+=sendto(sockfd, buf+bytes_sent, BUFLEN,0, addr, alen);
-            bytes_sent+=send(clfd, buf+bytes_sent, BUFLEN,0);
+            printf("pid_openCV %d\n", pid_openCV);
+            memset(temp, 0, 10);
+            fgets(temp, 10, fp);
+            printf("Trying to send size\n");
+            //convert the string to int
+            size_t bytesToRead = atoi((char*)temp);
+
+            //allocate memory where to store encoded iamge data that will be received
+            buf = (u_char*)malloc(bytesToRead*sizeof(u_char));
+            memset(buf, 0, bytesToRead);
+            printf("allocated: %s\n", temp);
+            printf("allocated (int): %lu\n", bytesToRead);
+            //initialize the number of bytes read to 0
+            printf("Trying to read...\n");
+
+            if((elRead = fread (buf, bytesToRead, 1, fp))!=1)
+            {
+                printf("Read warning: not read all bytes\n");
+                break;
+            }
+            /*see popen pag. 542*/
+            printf("bytes read all %ld\n", bytesToRead);
+
+            toSend=BUFLEN;
+            printf("sending another img\n");
+            if(send(clfd, temp, BUFLEN, 0)<0)
+            {
+                printf("exitng while 1\n");
+                break;
+            }
+            printf("bytes_sent %ld\n", bytes_sent);
+            printf("bytesToRead %ld\n", bytesToRead);
+            while(bytes_sent<bytesToRead)
+            {
+                //bytes_sent+=sendto(sockfd, buf+bytes_sent, BUFLEN,0, addr, alen);
+                if ((currSent=send(clfd, buf+bytes_sent, toSend,0))<0)
+                {
+                    printf("sending img pclosing\n");
+                    kill(pid_openCV, SIGKILL);
+                    break;//instead of exiting, go to next iter of while(1): it
+                    /*will exit when trying to send the size*/
+                }
+                bytes_sent+=(size_t)(currSent);
+                toSend = BUFLEN<(bytesToRead-bytes_sent)? BUFLEN:(bytesToRead-bytes_sent);
+            }
+            printf("bytes_sent %ld\n\n\n", bytes_sent);
+            bytes_sent = 0;
+            usleep(100);
+            free(buf);
         }
+        printf("final pclosing\n");
+        kill(pid_openCV, SIGKILL);
+        custom_pclose(fp, pid_openCV);
     }
 }
 
@@ -436,4 +472,74 @@ int initserver(int type,   const struct sockaddr *addr, socklen_t alen, int qlen
         close (fd);
         errno = err;
         return(-1);
+}
+
+FILE * custom_popen(char* command, char type, pid_t* pid)
+{
+    pid_t child_pid;
+    int fd[2];
+    pipe(fd);
+
+    if((child_pid = fork()) == -1)
+    {
+        perror("fork");
+        exit(1);
+    }
+
+    /* child process */
+    if (child_pid == 0)
+    {
+        if (type == 'r')
+        {
+            close(fd[0]);    //Close the READ end of the pipe since the child's fd is write-only
+            dup2(fd[1], 1); //Redirect stdout to pipe
+        }
+        else
+        {
+            close(fd[1]);    //Close the WRITE end of the pipe since the child's fd is read-only
+            dup2(fd[0], 0);   //Redirect stdin to pipe
+        }
+
+        setpgid(child_pid, child_pid); //Needed so negative PIDs can kill children of /bin/sh
+        execl(command, command, (char*)NULL);
+        exit(0);
+    }
+    else
+    {
+        printf("child pid %d\n", child_pid);
+        if (type == 'r')
+        {
+            close(fd[1]); //Close the WRITE end of the pipe since parent's fd is read-only
+        }
+        else
+        {
+            close(fd[0]); //Close the READ end of the pipe since parent's fd is write-only
+        }
+    }
+
+    *pid = child_pid;
+
+    if (type == 'r')
+    {
+        return fdopen(fd[0], "r");
+    }
+
+    return fdopen(fd[1], "w");
+}
+
+int custom_pclose(FILE * fp, pid_t pid)
+{
+    int stat;
+
+    fclose(fp);
+    while (waitpid(pid, &stat, 0) == -1)
+    {
+        if (errno != EINTR)
+        {
+            stat = -1;
+            break;
+        }
+    }
+
+    return stat;
 }

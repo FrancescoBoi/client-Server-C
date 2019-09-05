@@ -69,14 +69,14 @@ int main(int argc, char *argv[])
             {
                 //error
                 printf("forkin error\n");
-                return;
+                return 1;
               }
             //print_uptime(sockfd);
             while(1)
             {
-              showImg(sockfd, fp);
-              sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0,
-                aip->ai_addr, aip->ai_addrlen);
+               showImg(sockfd, fp);
+               sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0,
+                 aip->ai_addr, aip->ai_addrlen);
             }
             pclose(fp);
             exit(0);
@@ -115,69 +115,63 @@ void showImg(int sockfd, FILE *fp)
     //printf("pidline: %s",pidline);
     //pid = strtol (pidline, NULL, 10);
     //pclose(fp_pid);
+    while(1)
+    {
+        //if (send(sockfd, buf, strlen(buf), 0 )<0)
+        //{
+        //    err_sys("sendto err");
+        //}
+        memset(buf,0,BUFLEN);
+        if ((n = recv(sockfd, buf, BUFLEN, 0)) < 0)
+        {
+            err_sys("recv error");
+        }
+        printf("buf = %s\n", buf);
+        if(fwrite(buf, 10, 1, fp)<1)
+        {
+            printf("error sending size to client child\n");
+            return;
+        }
+        total_bytes = atoi((char*)buf);
 
-    if (send(sockfd, buf, strlen(buf), 0 )<0)
-    {
-        err_sys("sendto err");
-    }
-    n = recv(sockfd, buf, BUFLEN, 0);
-    total_bytes = atoi((char*)buf);
-    if(fwrite(buf, 10, 1, fp)!=1)
-    {
-        printf("error sending size to client child\n");
-        return;
-    }
-    if (n < 0)
-    {
-        err_sys("recv error");
-    }
-    total_bytes = atoi((char*)buf);
-
-    img = malloc(total_bytes*sizeof(u_char));
-    printf("Converted valueeeee for expected size: %lu\n", total_bytes);
-
-    while(read<total_bytes)
-    {
-         n = recv(sockfd, img+read, bytesToReceive, 0 );
-         read += n;// to keep the defensive if later
-         bytesToReceive = (total_bytes-read)<BUFLEN ? (total_bytes-read) : BUFLEN;
-         if (n<0)
+        img = malloc(total_bytes*sizeof(u_char));
+        printf("Converted valueeeee for expected size: %lu\n", total_bytes);
+        read = 0;
+        while(read<total_bytes)
+        {
+             n = recv(sockfd, img+read, bytesToReceive, 0 );
+             read += n;// to keep the defensive if later
+             bytesToReceive = (total_bytes-read)<BUFLEN ? (total_bytes-read) : BUFLEN;
+             if (n<0)
+             {
+                 if (errno !=EINTR)
+                 {
+                     alarm(0);
+                 }
+                 err_sys("recv error");
+                 break;
+             }
+             if (buf[0]=='\0')//null char
+             {
+                  printf("Entered buf[0] cond\n");
+                  break;
+             }
+         }
+         printf("total byets read: %ld\n", read);
+         unsigned int is_sent = 0;
+         n = BUFLEN;
+         if((is_sent = fwrite(img, total_bytes, 1, fp))!=1)
          {
-               if (errno !=EINTR)
-               {
-                   alarm(0);
-               }
-               err_sys("recv error");
-               break;
-           }
-           if (buf[0]=='\0')//null char
-           {
-               printf("Entered buf[0] cond\n");
-               break;
-           }
+             printf("error sending size: %u sent... exiting program\n", is_sent);
+             return;
+         }
+         //sleep(10);
+         //kill(pid, SIGKILL);
+         printf("reaching end freeing img\n");
+         free(img);
+         //usleep(10);
+    }
 
-       }
-       printf("total byets read: %ld\n", read);
-       size_t sent = 0;
-       unsigned int is_sent = 0;
-       n = BUFLEN;
-       while(sent<total_bytes)
-       {
-           if((is_sent = fwrite(img+sent, n, 1, fp))!=1)
-           {
-               printf("error sending size, exiting program\n");
-               return;
-           }
-           sent += is_sent*n;
-           n = BUFLEN<(total_bytes-sent) ? BUFLEN:(total_bytes-sent);
-       }
-       printf("Waiting for child...\n");
-       //sleep(10);
-       //kill(pid, SIGKILL);
-       //printf("papppo\n");
-       //printf("pipppo\n");
-       printf("reaching en  d freeing img\n");
-       free(img);
 }
 
 int connect_retry(int domain, int type, int protocol,
