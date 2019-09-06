@@ -26,7 +26,7 @@ void serveImg(int sockfd);
 FILE * custom_popen(char* command, char type, pid_t* pid);
 int custom_pclose(FILE * fp, pid_t pid);
 void clearSignal();
-
+void sigPipeSig();
 /*GLOBAL VARIABLES*/
 pid_t pid_openCV;
 /*END GLOBALS*/
@@ -262,6 +262,7 @@ void serveImg(int sockfd)
             LOG_DEBUG
             format and other arguements are passed to vsprintf function forf formatting.*/
             syslog(LOG_ERR, "ruptimed: accept error: %s", strerror(errno));
+            printf("Error accepting\n");
             exit(1);
         }
         //if ((pid = fork())<0)
@@ -269,10 +270,12 @@ void serveImg(int sockfd)
         if ((fp = custom_popen("./imgTransferC/childP/openCV", 'r', &pid_openCV)) == NULL)
         //if ((fp = popen("./imgTransferC/childP/openCV", "r")) == NULL)
         {
+            printf("error custom_opening\n");
             syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));
             exit(1);
         }
         signal(SIGINT, clearSignal);
+        signal(SIGPIPE, sigPipeSig);
         printf("pchild returned from popen %d\n", pid_openCV);
         /*else if (pid == 0) //CHILD
         {*/
@@ -328,9 +331,11 @@ void serveImg(int sockfd)
 
             toSend=BUFLEN;
             printf("sending another img\n");
-            if(send(clfd, temp, BUFLEN, 0)<0)
+            printf("sockfd %d\n", clfd);
+            if(send(clfd, temp, BUFLEN, 0)<1)
             {
                 printf("exitng while 1\n");
+                free(buf);
                 break;
             }
             printf("bytes_sent %ld\n", bytes_sent);
@@ -338,13 +343,16 @@ void serveImg(int sockfd)
             while(bytes_sent<bytesToRead)
             {
                 //bytes_sent+=sendto(sockfd, buf+bytes_sent, BUFLEN,0, addr, alen);
-                if ((currSent=send(clfd, buf+bytes_sent, toSend,0))<0)
+                printf("Sending\n");
+                printf("sockfd %d\n", clfd);
+                if ((currSent=send(clfd, buf+bytes_sent, toSend,0))<1)
                 {
-                    printf("sending img pclosing\n");
+                    printf("currSent=%ld; sending img pclosing\n",currSent);
                     kill(pid_openCV, SIGKILL);
                     break;//instead of exiting, go to next iter of while(1): it
                     /*will exit when trying to send the size*/
                 }
+                printf("currSent=%ld; \n",currSent);
                 bytes_sent+=(size_t)(currSent);
                 toSend = BUFLEN<(bytesToRead-bytes_sent)? BUFLEN:(bytesToRead-bytes_sent);
             }
@@ -543,7 +551,18 @@ int custom_pclose(FILE * fp, pid_t pid)
 
 void clearSignal()
 {
+    printf("Killing %d\n", pid_openCV);
+    kill(pid_openCV, SIGKILL);
+    exit(0);
+}
+
+/*Bug: suppose max_num of clients connect, then another client A tries to connect but can't so
+the user exits. When another client disconnects, the server serve the disconected
+client A which is disconnected. send will not work: it generates the SIGPIPE error
+and then exits. This function manages the SIGPIPE, killing the child process pid_openCV
+and avoiding exiting*/
+void sigPipeSig()
+{
   printf("Killing %d\n", pid_openCV);
   kill(pid_openCV, SIGKILL);
-  exit(0);
 }
