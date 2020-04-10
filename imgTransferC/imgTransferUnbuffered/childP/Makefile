@@ -1,16 +1,10 @@
 CXX = g++
 
 CXXFLAGS = -std=c++11 -pg
-INC_PATH = `pkg-config --cflags /home/fra/Documents/openCV//openCV/build/lib/pkgconfig/opencv.pc` \
-	`pkg-config --cflags /home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib/pkgconfig/sdl2.pc` \
-	`pkg-config --cflags /home/fra/Documents/openCV/jsoncpp/build/pkg-config/jsoncpp.pc` \
-	-I /home/fra/Documents/openCV//poco/instDir/include/
+INC_PATH = `pkg-config --cflags opencv`
 
 #LIB_PATH = -L../cmake_bin_dir/lib/ ./gainput/build/lib -L../SDL2-2.0.8/build/ -L../SDL2-2.0.8/build/lib
-LIBS = 	`pkg-config --libs /home/fra/Documents/openCV/openCV/build//lib/pkgconfig/opencv.pc` \
-	`pkg-config --libs /home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib/pkgconfig/sdl2.pc` \
-	`pkg-config --libs /home/fra/Documents/openCV/jsoncpp/build/pkg-config/jsoncpp.pc` \
-	-L/home/fra/Documents/openCV/poco/instDir/lib/ -lPocoNetd -lPocoUtild -lPocoFoundationd \
+LIBS = 	`pkg-config --libs opencv` 
 
 SOURCEDIR := ./
 SOURCES := $(wildcard $(SOURCEDIR)/*.cpp)

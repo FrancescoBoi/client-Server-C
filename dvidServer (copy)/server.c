@@ -26,8 +26,6 @@ void serveImg(int sockfd);
 
 int main(int argc, char* argv[])
 {
-    char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
-    putenv(str);
     printf("entered main\n");
     /*The C data structure used to represent addresses and hostnames within
     the networking API is the following*/
@@ -259,7 +257,7 @@ void serveImg(int sockfd)
             exit(1);
         }
         //if ((pid = fork())<0)
-        if ((fp = popen("/home/fra/Desktop/imgTransferC/childP/openCV", "r")) == NULL)
+        if ((fp = popen("../imgTransferC/childP/openCV", "r")) == NULL)
         {
             syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));
             exit(1);

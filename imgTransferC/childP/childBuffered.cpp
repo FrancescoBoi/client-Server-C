@@ -3,6 +3,7 @@
 #include <iostream>
 //#include <sys/types.h>
 #include <fcntl.h>
+#include "constants.h"
 using namespace std;
 using namespace cv;
 
@@ -21,7 +22,7 @@ int main(int argc, char *argv[])
     temp = open("/dev/null", O_WRONLY);
     dup2(temp, 1);
     close(temp  );
-    VideoCapture cam(0 + CAP_V4L);
+    VideoCapture cam(0 + CAM_BIAS);
     if (!cam.isOpened())
     {
         cout << "\nCould not open reference " << 0 << endl;

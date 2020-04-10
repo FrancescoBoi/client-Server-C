@@ -4,6 +4,8 @@
 #include <iostream>
 #include <time.h>
 
+using namespace std;
+
 int main(int argc, char *argv[])
 {
     //file descriptor to the child process
@@ -35,12 +37,24 @@ int main(int argc, char *argv[])
             printf("error elRead!=1, elRead=%ld\n", elRead);
             return 0;
         }
+        std::vector<u_char> vec_img;
+        vec_img.assign(buf, buf+total_bytes);
+        cout<<"----"<<CV_8UC3<<endl;
         printf("child all bytes read\n");
-        frame  = cv::imdecode(cv::Mat(3,total_bytes,CV_8UC3, buf), 1);
+        try
+        {
+            frame = cv::imdecode(vec_img, 1);
+            //frame  = cv::imdecode(cv::Mat(3, total_bytes, CV_8UC3, buf), 1);
+        }
+        catch(const char*msg)
+        {
+            std::cerr<<msg<<std::endl;
+        }
+        cout<<"frame decoded"<<endl;
         try
         {
             cv::imshow("win", frame);
-            cv::waitKey(50);
+            if(cv::waitKey(2)>2){;}
         }
         catch (const char* msg)
         {

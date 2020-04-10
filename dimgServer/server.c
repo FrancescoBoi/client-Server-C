@@ -35,8 +35,6 @@ pid_t pid_openCV;
 
 int main(int argc, char* argv[])
 {
-    char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
-    putenv(str);
     /*The C data structure used to represent addresses and hostnames within
     the networking API is the following*/
     struct addrinfo *ailist, *aip, hint;

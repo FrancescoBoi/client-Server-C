@@ -26,8 +26,6 @@ void serveConnectionless(int sockfd);
 
 int main(int argc, char* argv[])
 {
-    char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
-    putenv(str);
     printf("entered main\n");
     /*The C data structure used to represent addresses and hostnames within
     the networking API is the following*/
@@ -184,7 +182,7 @@ void serveConnectionless(int sockfd)
         returns a file pointer (connected to std output if "r", to stdin if "w").
         pclose closes the stream, waits for the command to terminate*/
         printf("Trying to fork\n");
-        if ((fp = popen("/home/fra/Desktop/imgTransferC/childP/openCV", "r")) == NULL)
+        if ((fp = popen("../imgTransferC/childP/openCV", "r")) == NULL)
         {
             /*sprintf copy the string passed as second parameter inside buf*/
             sprintf(buf, "error: %s\n", strerror(errno));
