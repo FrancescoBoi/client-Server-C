@@ -1,5 +1,4 @@
 all:
-	+$(MAKE) -C common
 	+$(MAKE) -C dserver
 	+$(MAKE) -C dclient
 	+$(MAKE) -C dconnectionlessServer
@@ -10,7 +9,12 @@ all:
 	+$(MAKE) -C imgTransferC/childP
 
 clean:
-	$(RM) client server common/obj/* dserver/obj/* dclient/obj/* \
-		dconnectionlessClient/obj/* dconnectionlessServer/obj/* \
-		dimgClient/obj/* dimgServer/obj/* imgTransferC/childDB/obj/* \
-		imgTransferC/childP/obj/*
+	$(RM) client server
+	+$(MAKE) -C dserver clean
+	+$(MAKE) -C dclient clean
+	+$(MAKE) -C dconnectionlessServer clean
+	+$(MAKE) -C dconnectionlessClient clean
+	+$(MAKE) -C dimgClient clean
+	+$(MAKE) -C dimgServer clean
+	+$(MAKE) -C imgTransferC/childDB clean
+	+$(MAKE) -C imgTransferC/childP clean

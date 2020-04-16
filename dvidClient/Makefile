@@ -1,24 +1,25 @@
 CC = gcc
-
-INC_PATH = -I../common/
-
-SOURCEDIR := ./
-SOURCES := $(wildcard $(SOURCEDIR)/*.c)
-OBJDIR  :=./obj
-OBJECTS := $(patsubst $(SOURCEDIR)/%.c,$(OBJDIR)/%.o, $(SOURCES))
-DEPENDS := $(patsubst $(SOURCEDIR)/%.c,$(OBJDIR)/%.d, $(SOURCES))
-
-COMMONDIR      := ../common
-SOURCESCOMMON  := $(wildcard $(COMMONDIR)/*.c)
-OBJDIRCOMMON   := $(COMMONDIR)/obj
-OBJECTSCOMMON  := $(patsubst $(COMMONDIR)/%.c,$(OBJDIRCOMMON)/%.o, $(SOURCESCOMMON))
-DEPENDSCOMMON  := $(patsubst $(COMMONDIR)/%.c,$(OBJDIRCOMMON)/%.d, $(SOURCESCOMMON))
+COMMONDIR_NAME := common
+COMMONDIR      := ../$(COMMONDIR_NAME)
+INC_PATH       := -I$(COMMONDIR)
+BUILD_DIR_NAME := build
+BUILDDIR       := ../$(BUILD_DIR_NAME)
+CURR_DIR_NAME  := $(shell basename $(CURDIR))
+SOURCEDIR      := ./
+SOURCES        := $(wildcard $(SOURCEDIR)/*.c)
+OBJDIR         := $(BUILDDIR)/$(CURR_DIR_NAME)
+OBJECTS        := $(patsubst $(SOURCEDIR)/%.c,$(OBJDIR)/%.o, $(SOURCES))
+DEPENDS        := $(patsubst $(SOURCEDIR)/%.c,$(OBJDIR)/%.d, $(SOURCES))
+OBJDIRCOMMON   := $(BUILDDIR)/$(COMMONDIR_NAME)
+LIBNAME        := libcommon.a
+LIBDIR         := $(COMMONDIR)/lib
+COMMONLIB      := $(LIBDIR)/$(LIBNAME)
+.PHONY: buildlib clean all
 
 # ADD MORE WARNINGS!
 WARNING := -Wall -Wextra
 
-EXECUTABLE := ../clientImgConnection
-
+EXECUTABLE := ../serverConnectionless
 # .PHONY means these rules get executed even if
 # files of those names exist.
 .PHONY: all clean
@@ -29,16 +30,19 @@ all: $(EXECUTABLE)
 
 clean:
 	$(RM) $(OBJECTS) $(DEPENDS) $(EXECUTABLE)
+	+$(MAKE) -C $(COMMONDIR) clean
 
 # Linking the executable from the object files
-# $^   # "src.c src.h" (all prerequisites)
-$(EXECUTABLE): $(OBJECTS) $(OBJECTSCOMMON)
+$(EXECUTABLE): $(OBJECTS) $(COMMONLIB)
 	$(CC) $(WARNING) $^ -o $@
 
--include $(DEPENDS) $(DEPENDSCOMMON)
+-include $(DEPENDS)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
+
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
 $(OBJDIR)/%.o: $(SOURCEDIR)/%.c Makefile | $(OBJDIR)
 	$(CC) $(WARNING) -MMD -MP -c $(INC_PATH) $< -o $@
@@ -46,5 +50,7 @@ $(OBJDIR)/%.o: $(SOURCEDIR)/%.c Makefile | $(OBJDIR)
 $(OBJDIRCOMMON):
 	mkdir -p $(OBJDIRCOMMON)
 
-$(OBJDIRCOMMON)/%.o: ../common/Makefile | $(OBJDIRCOMMON)
+$(COMMONLIB): FORCE
 	+$(MAKE) -C $(COMMONDIR)
+
+FORCE:

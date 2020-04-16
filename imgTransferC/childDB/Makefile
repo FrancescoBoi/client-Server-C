@@ -1,20 +1,21 @@
-CXX = g++
-
-CXXFLAGS = -std=c++11 -pg
-INC_PATH = `pkg-config --cflags opencv4`
-
-##LIB_PATH = -L../cmake_bin_dir/lib/ ./gainput/build/lib -L../SDL2-2.0.8/build/ -L../SDL2-2.0.8/build/lib
-LIBS = 	`pkg-config --libs opencv4`
-
+CXX      := g++
+CXXFLAGS := -std=c++11 -pg
+INC_PATH := `pkg-config --cflags opencv4`
+LIBS     := 	`pkg-config --libs opencv4`
+BUILD_DIR_NAME := build
+BUILDDIR       := ../../$(BUILD_DIR_NAME)
+CURR_DIR_NAME  := $(shell basename $(CURDIR))
 SOURCEDIR := ./
-SOURCES := $(wildcard $(SOURCEDIR)/*.cpp)
-OBJDIR=$(SOURCEDIR)/obj
+SOURCES   := $(wildcard $(SOURCEDIR)/*.cpp)
+OBJDIR    := $(BUILDDIR)/$(CURR_DIR_NAME)
 
 OBJECTS := $(patsubst $(SOURCEDIR)/%.cpp,$(OBJDIR)/%.o,	$(SOURCES))
-DEPENDS := $(patsubst $(SOURCEDIR)/%.cpp,$(OBJDIR)/%.d,$(SOURCES))
+DEPENDS := $(patsubst $(SOURCEDIR)/%.cpp,$(OBJDIR)/%.d, $(SOURCES))
 
 # ADD MORE WARNINGS!
 WARNING := -Wall -Wextra
+
+EXECUTABLE := openCVClient
 
 # .PHONY means these rules get executed even if
 # files of those names exist.
@@ -22,16 +23,19 @@ WARNING := -Wall -Wextra
 
 # The first rule is the default, ie. "make",
 # "make all" and "make parking" mean the same
-all: openCVClient
+all: $(EXECUTABLE)
 
 clean:
-	$(RM) $(OBJECTS) $(DEPENDS) openCVClient
+	$(RM) $(OBJECTS) $(DEPENDS) $(EXECUTABLE)
 
 # Linking the executable from the object files
-openCVClient: $(OBJECTS)
+$(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(WARNING) $(CXXFLAGS) $(INC_PATH) $^ -o $@ $(LIBS)
 
 -include $(DEPENDS)
+
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
