@@ -1,3 +1,4 @@
+
 all:
 	+$(MAKE) -C dserver
 	+$(MAKE) -C dclient
@@ -7,6 +8,8 @@ all:
 	+$(MAKE) -C dimgServer
 	+$(MAKE) -C imgTransferC/childDB
 	+$(MAKE) -C imgTransferC/childP
+	+$(MAKE) -C dvidServer
+	+$(MAKE) -C dvidClient
 
 clean:
 	$(RM) client server
@@ -18,3 +21,5 @@ clean:
 	+$(MAKE) -C dimgServer clean
 	+$(MAKE) -C imgTransferC/childDB clean
 	+$(MAKE) -C imgTransferC/childP clean
+	+$(MAKE) -C dvidServer
+	+$(MAKE) -C dvidClient

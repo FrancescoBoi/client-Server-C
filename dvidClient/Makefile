@@ -19,7 +19,7 @@ COMMONLIB      := $(LIBDIR)/$(LIBNAME)
 # ADD MORE WARNINGS!
 WARNING := -Wall -Wextra
 
-EXECUTABLE := ../serverConnectionless
+EXECUTABLE := ../clientVidConnectionless
 # .PHONY means these rules get executed even if
 # files of those names exist.
 .PHONY: all clean

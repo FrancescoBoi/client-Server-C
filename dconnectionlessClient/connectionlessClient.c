@@ -22,8 +22,6 @@ void sigalrm(int signo);
 
 int main(int argc, char *argv[])
 {
-    char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
-    putenv(str);
     //char *host;
     struct addrinfo *ailist, *aip;
     struct addrinfo hint;
@@ -112,11 +110,6 @@ void print_uptime(int sockfd, struct addrinfo *aip)
    }
    //When the timer expires, SIGALRM is generated
    n = recvfrom(sockfd, buf, BUFLEN, 0, NULL, NULL);
-   /*if(fwrite(buf, 10, 1, fp)!=1)
-   {
-       printf("error sending size, exiting program\n");
-       return;
-   }*/
    total_bytes = atoi((char*)buf);
    if(fwrite(buf, 10, 1, fp)!=1)
    {

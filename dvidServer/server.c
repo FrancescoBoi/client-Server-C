@@ -26,7 +26,6 @@ void serveImg(int sockfd);
 
 int main(int argc, char* argv[])
 {
-    printf("entered main\n");
     /*The C data structure used to represent addresses and hostnames within
     the networking API is the following*/
     struct addrinfo *ailist, *aip, hint;
@@ -216,9 +215,9 @@ void serve(int sockfd)
 void serveImg(int sockfd)
 {
     int clfd;
-    //pid_t pid;
     FILE *fp;
     //char buf[BUFLEN];
+
     /*VARIABLE FOR READING IMAGE*/
     char temp[10] ={0};
     size_t total_bytes_read;
@@ -254,16 +253,18 @@ void serveImg(int sockfd)
             LOG_DEBUG
             format and other arguements are passed to vsprintf function forf formatting.*/
             syslog(LOG_ERR, "ruptimed: accept error: %s", strerror(errno));
+            printf("Error accepting\n");
             exit(1);
         }
         //if ((pid = fork())<0)
-        if ((fp = popen("../imgTransferC/childP/openCV", "r")) == NULL)
+        //FILE * custom_popen(char* command, char type, pid_t* pid);W	
+	if ((fp = popen("../imgTransferC/childP/openCV", "r")) == NULL)
         {
             syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));
             exit(1);
         }
         /*else if (pid == 0) //CHILD
-        {
+        {*/
             /*The parent called daemonize (Figure 13.1), so STDIN_FILENO,
              STDOUT_FILENO, and STDERR_FILENO are already open to /dev/NULL
              Thus the call to close does not need to be protected by checks that
@@ -285,7 +286,7 @@ void serveImg(int sockfd)
             //close(clfd);
             //waitpid(pid, &status, 0);
         //}
-        printf("Process started\n");
+        printf("Process started\n");*/
         /*get data from the pipe that reads created to exec /usr/bin/uptime */
         //read the number of btyes of encoded image data
         fgets(temp, 10, fp);

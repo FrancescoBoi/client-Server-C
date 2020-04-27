@@ -20,7 +20,7 @@ COMMONLIB      := $(LIBDIR)/$(LIBNAME)
 WARNING := -Wall -Wextra
 
 # OBJS_LOC is in current working directory,
-EXECUTABLE := ../serverImgConnection
+EXECUTABLE := ../serverVidConnection
 # .PHONY means these rules get executed even if
 # files of those names exist.
 .PHONY: all clean
