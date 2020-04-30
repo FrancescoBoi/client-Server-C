@@ -1,0 +1,203 @@
+\documentclass[12pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{cancel}
+\usepackage[ruled, vlined,]{algorithm2e}
+\usepackage{graphicx}
+\usepackage[upgreek]{mathastext}
+\usepackage{eucal}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{flafter} %avoids that figures are floated before they were defined, i.e. before section title
+\usepackage{listings}
+\usepackage{booktabs}% pandas.to_latex() \toprule, \bottomrule, 
+\usepackage[dvipsnames,table,xcdraw]{xcolor}
+\usepackage{imakeidx}
+\usepackage{systeme}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\usepackage{xparse}
+
+\makeindex
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section] 
+ 
+\newcommand{\R}{\mathbb{R}} 
+\newcommand{\E}{{\rm I\kern-.3em E}}
+
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\X}{\mathrm{\mathbf{X}}}
+\newcommand{\I}{\mathrm{\mathbf{I}}}
+\newcommand{\hS}{\mathrm{\hat{\mathbf{\Sigma}}}}
+\newcommand{\hsi}{\mathrm{\hat{\mathbf{\Sigma}}}^{-1}}
+\newcommand{\si}{\mathbf{\Sigma}^{-1}}
+\newcommand{\y}{\mathbf{y}}
+\newcommand{\be}{\mathbf{\beta}}
+\newcommand{\e}{\mathbf{\epsilon}}
+\newcommand{\al}{\mathbf{\alpha}}
+\newcommand{\hbe}{\hat{\mathbf{\beta}}}
+\newcommand{\Tr}{\mathbf{Tr}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\hmu}{\hat{\mu}}
+\usepackage{mathtools} 
+\DeclarePairedDelimiter\autobracket{(}{)}
+\newcommand{\br}[1]{\autobracket*{#1}}
+\newcommand{\hpi}{\hat{\pi}}
+\newcommand{\hs}{\hat{\sigma}^2}
+\newcommand{\ssq}{\sigma^2}
+\newtheorem{theorem}{Theorem}
+\newcommand{\inv}{\mathrm{\left( \X^T\X\right)^{-1}}} 
+\newcommand{\HM}{\mathrm{\inv\X^T}} 
+\newcommand{\hb}{\mathrm{\hat{\mathbf{\beta}}}} 
+\newcommand{\mb}{\mathrm{\mathbf}}
+\newcommand\norm[1]{\left\lVert#1\right\rVert}
+%\newcommand\br[1]{\left(#1\right)}
+%\newcommand\sbr[1]{\left[#1\right]}
+
+\newcommand{\argmax}[1]{\underset{#1}{\operatorname{arg}\,\operatorname{max}}\;}
+\newcommand{\argmin}[1]{\underset{#1}{\operatorname{arg}\,\operatorname{min}}\;}
+\usepackage{amssymb}
+ 
+\let\ti\textit
+\let\tb\textbf
+\let\cd\lstinline
+ 
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{10} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{10}  % for normal
+ 
+ 
+ 
+\begin{document}
+
+
+\title{Client-Server application in C}
+\author{Francesco Boi}
+\date{\vspace{-5ex}}
+\maketitle
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+\tableofcontents
+
+\section{Preliminaries}
+The project needs the installation of OpenCV4.
+
+\subsection{Installing OpenCv4 on OSX}
+First of all install homebrew with 
+\begin{lstlisting}
+/bin/bash -c "$(curl -fsSL https://raw.\
+githubusercontent.com/Homebrew/install/master/install.sh)"
+\end{lstlisting}
+
+Each project requires openCV4. On OSX it can be installed using \lstinline+brew+ with the command \lstinline+brew install opencv4+: this should already install \lstinline+opencv4+. The compilation process uses the package \lstinline+pkg-config+: install it with \lstinline+brew install pkg-config+. To check whether the openCV installation was successful do: 
+\begin{lstlisting}
+pkg-config --libs --cflags opencv4
+\end{lstlisting}
+A long output with the folders to include and the compiled libraries is shown.
+
+\subsection{Installing OpenCV4 on Ubuntu}
+Currently it is not possible to install OpenCV4 through \lstinline+apt+: one has to to download it and perform the manual installation.
+Detailed Instructions can be found here:
+\begin{lstlisting}
+https://www.learnopencv.com/install-opencv-4-on-ubuntu-18-04/
+\end{lstlisting}
+Summarising, first install the dependencies
+\begin{lstlisting}
+## Install dependencies
+
+sudo apt -y install build-essential checkinstall cmake pkg-config yasm
+sudo apt -y install git gfortran
+sudo apt -y install libjpeg8-dev libpng-dev
+
+sudo apt -y install software-properties-common
+
+sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
+sudo apt -y update
+
+sudo apt -y install libjasper1
+
+sudo apt -y install libtiff-dev
+
+sudo apt -y install libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev
+sudo apt -y install libxine2-dev libv4l-dev
+cd /usr/include/linux
+sudo ln -s -f ../libv4l1-videodev.h videodev.h
+cd "$cwd"
+
+sudo apt -y install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+sudo apt -y install libgtk2.0-dev libtbb-dev qt5-default
+sudo apt -y install libatlas-base-dev
+sudo apt -y install libfaac-dev libmp3lame-dev libtheora-dev
+sudo apt -y install libvorbis-dev libxvidcore-dev
+sudo apt -y install libopencore-amrnb-dev libopencore-amrwb-dev
+sudo apt -y install libavresample-dev
+
+sudo apt -y install x264 v4l-utils
+# Optional dependencies
+sudo apt -y install libprotobuf-dev protobuf-compiler
+sudo apt -y install libgoogle-glog-dev libgflags-dev
+sudo apt -y install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
+\end{lstlisting}
+
+Download and install OpenCV:
+\begin{lstlisting}
+cvVersion="master"
+cwd=$(pwd)
+git clone https://github.com/opencv/opencv.git
+cd opencv
+git checkout $cvVersion
+cd opencv
+mkdir build
+cd build
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+            -D CMAKE_INSTALL_PREFIX=$cwd/installation/OpenCV-"$cvVersion" \
+            -D INSTALL_C_EXAMPLES=ON \
+            -D INSTALL_PYTHON_EXAMPLES=ON \
+            -D WITH_TBB=ON \
+            -D WITH_V4L=ON \
+            -D OPENCV_PYTHON3_INSTALL_PATH=$cwd/OpenCV-$cvVersion-py3/lib/python3.5/site-packages \
+        -D WITH_QT=ON \
+        -D WITH_OPENGL=ON \
+        -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
+        -D BUILD_EXAMPLES=ON ..
+make -j16
+make install
+\label{compilation}
+\end{lstlisting}
+
+\subsection{Using older versions of OpenCV}
+\label{olderOpenCV}
+The code itself works also with older versions of OpenCV3. If one has installed any of them and does not want to update, it is possible to use them by changing the \lstinline+Makefile+s in the projects. Particularly in the following \lstinline+Makefile+s:
+\begin{itemize}
+\item \lstinline+imgTransferC/childP/Makefile+
+\item \lstinline+imgTransferC/childP/Makefile+
+\item \lstinline+imgTransferC/childDB/Makefile+
+\item \lstinline+imgTransferC/childDB/Makefile+
+\item \lstinline+imgTransferC/imgTransferUnbuffered/Makefile+ (for the moment this is unused so it can be discarded).
+\end{itemize}
+for the lines having the command \lstinline+pkg-config+ one has to change the strings \lstinline+opencv4+ to \lstinline+opencv+.
+
+\subsection{Local installation of OpenCV}
+It is also possible to install OpeCV in a local folder. To do that, repeat the steps in \ref{compilation} but change the option \lstinline+-DCMAKE_INSTALL_PREFIX=+ to another folder new folder (different from build). After that, make \lstinline+pkg-config+ commands in the  \lstinline+Makefiles+ listed in \ref{olderOpenCV} to use\lstinline+yourFolder/lib/pkgconfig/opencv.pc+.
+
+\subsection{Compilation}
+To compile each project it is sufficient to run \cd+make+ from the main folder. This will call automatically each \cd+Makefile+ in the others folders. Outputs are created in the main folder.
+
+\section{General description}
+The folder contains different client-server applications. All these applications are based on the client-server application given in the book \ti{Advanced programming in Unix Environment}. The applications are the following:
+\begin{itemize}
+\item
+\end{itemize}
+
+The application is a client-server application which streams a the input of the webcam from the server to the display to the scanner. The application is made up by four programs:
+\begin{itemize}
+\item
+\end{itemize}
+
+\end{document}

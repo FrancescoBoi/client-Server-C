@@ -6,7 +6,7 @@
 #include<unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
-#include "../common/error.h"
+#include "error.h"
 #include <signal.h>
 #define BUFLEN      128
 #define MAXSLEEP 128
@@ -21,8 +21,8 @@ void showImg(int sockfd, FILE* fp);
 
 int main(int argc, char *argv[])
 {
-    char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
-    putenv(str);
+    //char str[] ="LD_LIBRARY_PATH=/home/fra/Documents/openCV/openCV/build/lib/:/home/fra/Documents/openCV/poco/instDir/lib/:/home/fra/Documents/openCV/SDL2-2.0.8/instDir/lib";
+    //putenv(str);
     FILE* fp;
     char *host;
     struct addrinfo *ailist, *aip;
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            if ((fp = popen("./imgTransferC/childDB/openCVClient", "w")) == NULL)
+            if ((fp = popen("../imgTransferC/childDB/openCVClient", "w")) == NULL)
             {
                 //error
                 printf("forkin error\n");

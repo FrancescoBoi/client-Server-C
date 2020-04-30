@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include"../common/utilities.h"
+#include "utilities.h"
 #include "error.h"
 
 #define BUFLEN 128
@@ -265,7 +265,7 @@ void serveImg(int sockfd)
         }
         //if ((pid = fork())<0)
         //FILE * custom_popen(char* command, char type, pid_t* pid);
-        if ((fp = custom_popen("./imgTransferC/childP/openCV", 'r', &pid_openCV)) == NULL)
+        if ((fp = custom_popen("../imgTransferC/childP/openCV", 'r', &pid_openCV)) == NULL)
         //if ((fp = popen("./imgTransferC/childP/openCV", "r")) == NULL)
         {
             printf("error custom_opening\n");

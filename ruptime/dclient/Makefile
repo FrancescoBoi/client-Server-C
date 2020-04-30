@@ -1,16 +1,19 @@
-CC = gcc
+CC             := gcc
 COMMONDIR_NAME := common
-COMMONDIR      := ../$(COMMONDIR_NAME)
+COMMONDIR      := ../../$(COMMONDIR_NAME)
 INC_PATH       := -I$(COMMONDIR)
 BUILD_DIR_NAME := build
-BUILDDIR       := ../$(BUILD_DIR_NAME)
+BUILDDIR       := ../../$(BUILD_DIR_NAME)
+APP_NAME       := $(notdir $(abspath $(CURDIR)/..))
+APP_BUILDDIR   := $(BUILDDIR)/$(APP_NAME)
+#this works as well CURR_DIR_NAME  := $(notdir $(CURDIR))
 CURR_DIR_NAME  := $(shell basename $(CURDIR))
 SOURCEDIR      := ./
 SOURCES        := $(wildcard $(SOURCEDIR)/*.c)
-OBJDIR         := $(BUILDDIR)/$(CURR_DIR_NAME)
-OBJECTS        := $(patsubst $(SOURCEDIR)/%.c,$(OBJDIR)/%.o, $(SOURCES))
-DEPENDS        := $(patsubst $(SOURCEDIR)/%.c,$(OBJDIR)/%.d, $(SOURCES))
-OBJDIRCOMMON   := $(BUILDDIR)/$(COMMONDIR_NAME)
+OBJDIR         := $(APP_BUILDDIR)/$(CURR_DIR_NAME)
+OBJECTS        := $(patsubst $(SOURCEDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
+DEPENDS        := $(patsubst $(SOURCEDIR)/%.c, $(OBJDIR)/%.d, $(SOURCES))
+OBJDIRCOMMON   := $(APP_BUILDDIR)/$(COMMONDIR_NAME)
 LIBNAME        := libcommon.a
 LIBDIR         := $(COMMONDIR)/lib
 COMMONLIB      := $(LIBDIR)/$(LIBNAME)
@@ -44,6 +47,9 @@ $(OBJDIR):
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
+
+$(APP_BUILDDIR):
+	mkdir -p $(APP_BUILDDIR)
 
 $(OBJDIR)/%.o: $(SOURCEDIR)/%.c Makefile | $(OBJDIR)
 	$(CC) $(WARNING) -MMD -MP -c $(INC_PATH) $< -o $@

@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
-#include "../common/error.h"
+#include "error.h"
 #include <signal.h>
 #define BUFLEN  4096
 #define TIMEOUT 10

@@ -8,12 +8,12 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include"../common/utilities.h"
+#include "utilities.h"
 #include "error.h"
 
-#define BUFLEN 128
+#define BUFLEN 4096
 #define QLEN 10
-
+#define MAXADDRLEN 256
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 156
 #endif
@@ -22,10 +22,11 @@ int initserver(int type, const struct sockaddr *addr, socklen_t alen, int qlen);
 
 void serve(int sockfd);
 void serve2(int sockfd);
-void serveImg(int sockfd);
+void serveConnectionless(int sockfd);
 
 int main(int argc, char* argv[])
 {
+    printf("entered main\n");
     /*The C data structure used to represent addresses and hostnames within
     the networking API is the following*/
     struct addrinfo *ailist, *aip, hint;
@@ -57,7 +58,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
     printf("Daemonizing\n");
-    //daemonize("ruptimed");
+    //daemonize("ruptimed");//temporarily disabled for debug
     //printf("Daemonized\n");
     /*       The hints argument points to an addrinfo structure that specifies
        criteria for selecting the socket address structures returned in the
@@ -95,7 +96,7 @@ int main(int argc, char* argv[])
        list is set to point to the official name of the host.*/
     //hint.ai_flags = AI_CANONNAME;
     hint.ai_flags |= AI_PASSIVE;
-    hint.ai_socktype = SOCK_STREAM;
+    hint.ai_socktype = SOCK_DGRAM;
     hint.ai_addr = NULL;
     hint.ai_next = NULL;
     /*If the AI_PASSIVE flag is specified in hints.ai_flags, and node is
@@ -135,17 +136,92 @@ int main(int argc, char* argv[])
     }
     for (aip = ailist; aip!=NULL; aip = aip->ai_next)
     {
-        if ((sockfd = initserver(SOCK_STREAM, aip->ai_addr, aip->ai_addrlen, QLEN))>=0)
+        if ((sockfd = initserver(SOCK_DGRAM, aip->ai_addr, aip->ai_addrlen, QLEN))>=0)
         {
             //printf("starting to serve\n");
-            //serve2(sockfd);
-            serveImg(sockfd);
+            serveConnectionless(sockfd);
             printf("Exiting \n");
             exit(0);
         }
     }
     exit(1);
 }
+
+
+void serveConnectionless(int sockfd)
+{
+    int n;
+    socklen_t alen;
+    FILE *fp;
+    char buf[BUFLEN];
+    char abuf[MAXADDRLEN];
+    struct sockaddr *addr = (struct sockaddr*)abuf;
+    size_t bytes_sent;
+    //size_t bytes_read = 0;
+    /*VARIABLE FOR READING IMAGE*/
+    char temp[10] ={0};
+    size_t total_bytes_read;
+    unsigned short int elRead;
+    size_t bytes2Copy = BUFLEN;
+    for(;;)
+    {
+        total_bytes_read = 0;
+        elRead =0;
+        memset(temp, 0, 10);
+        bytes_sent = 0;
+        alen = MAXADDRLEN;
+        if((n=recvfrom(sockfd, buf, BUFLEN, 0, addr, &alen))<0)
+        {
+            syslog(LOG_ERR, "ruptimed: recvfrom error %s", strerror(errno));
+            exit(1);
+        }
+        /**pg. 542 Since a common operation is to create a pipe to another process
+        to either read its output or write its input stdio has provided popen and
+        pclose: popen creates pipe, close the unused ends of the pipe,
+        forks a child and call exec to execute cmdstr and
+        returns a file pointer (connected to std output if "r", to stdin if "w").
+        pclose closes the stream, waits for the command to terminate*/
+        printf("Trying to fork\n");
+        if ((fp = popen("../imgTransferC/childP/openCV", "r")) == NULL)
+        {
+            /*sprintf copy the string passed as second parameter inside buf*/
+            sprintf(buf, "error: %s\n", strerror(errno));
+            /*pag 610. send is similar to write. send(int sockfd, const void *buf, size_t nbytes, it flags)*/
+            //send(clfd, buf, strlen(buf),0);
+            sendto(sockfd, buf, strlen(buf),0, addr, alen);
+        }
+        else
+        {
+            printf("Process started\n");
+            /*get data from the pipe that reads created to exec /usr/bin/uptime */
+            //read the number of btyes of encoded image data
+            fgets(temp, 10, fp);
+            sendto(sockfd, temp, 10, 0, addr, alen);
+            //convert the string to int
+            size_t bytesToRead = atoi((char*)temp);
+
+            //allocate memory where to store encoded iamge data that will be received
+            u_char *buf = (u_char*)malloc(bytesToRead*sizeof(u_char));
+
+            //initialize the number of bytes read to 0
+            //printf ("bytesToRead: %ld\n",bytesToRead);
+            elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
+            total_bytes_read += elRead*bytes2Copy;
+            bytes2Copy = bytesToRead-total_bytes_read;
+            elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
+            total_bytes_read += elRead*bytes2Copy;
+            /*see popen pag. 542*/
+            printf("bytes read: %ld over %ld\n", total_bytes_read, bytesToRead);
+            pclose(fp);
+            while(bytes_sent<total_bytes_read)
+            {
+                bytes_sent+=sendto(sockfd, buf+bytes_sent, BUFLEN,0, addr, alen);
+            }
+        }
+        //close(clfd);
+    }
+}
+
 
 void serve(int sockfd)
 {
@@ -212,113 +288,7 @@ void serve(int sockfd)
     }
 }
 
-void serveImg(int sockfd)
-{
-    int clfd;
-    FILE *fp;
-    //char buf[BUFLEN];
 
-    /*VARIABLE FOR READING IMAGE*/
-    char temp[10] ={0};
-    size_t total_bytes_read;
-    unsigned short int elRead;
-    size_t bytes2Copy = BUFLEN;
-    size_t bytes_sent;
-    set_cloexec(sockfd);
-    for(;;)
-    {
-        total_bytes_read = 0;
-        elRead =0;
-        memset(temp, 0, 10);
-        bytes_sent = 0;
-        /*After listen, the socket can receive connect requests. accept
-        retrieves a connect request and converts it into a connection.
-        The file returned by accept is a socket descriptor connected to the client that
-        called connect, haing the same coket type and family type. The original
-        soket remains available to receive otherconneion requests. If we don't care
-        about client's identity we can set the second (struct sockaddr *addr)
-        and third parameter (socklen_t *len) to NULL*/
-        if((clfd = accept(sockfd, NULL, NULL))<0)
-        {
-            /*This generates a log mesage.
-            syslog(int priority, const char *fformat,...)
-            priority is a combination of facility and level. Levels are ordered from highest to lowest:
-            LOG_EMERG: emergency system unusable
-            LOG_ALERT: condiotin that must be fied immediately
-            LOG_CRIT: critical condition
-            LOG_ERR: error condition
-            LOG_WARNING
-            LOG_NOTICE
-            LOG_INFO
-            LOG_DEBUG
-            format and other arguements are passed to vsprintf function forf formatting.*/
-            syslog(LOG_ERR, "ruptimed: accept error: %s", strerror(errno));
-            printf("Error accepting\n");
-            exit(1);
-        }
-        //if ((pid = fork())<0)
-        //FILE * custom_popen(char* command, char type, pid_t* pid);W	
-	if ((fp = popen("../imgTransferC/childP/openCV", "r")) == NULL)
-        {
-            syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));
-            exit(1);
-        }
-        /*else if (pid == 0) //CHILD
-        {*/
-            /*The parent called daemonize (Figure 13.1), so STDIN_FILENO,
-             STDOUT_FILENO, and STDERR_FILENO are already open to /dev/NULL
-             Thus the call to close does not need to be protected by checks that
-             clfd  is not already equal to one of these values. *//*
-             if (dup2(clfd, STDOUT_FILENO) != STDOUT_FILENO ||
-                dup2(clfd, STDERR_FILENO)!= STDERR_FILENO)
-            {
-                syslog(LOG_ERR, "ruptimed: unexpected error\n");
-                exit(1);
-            }
-            close(clfd);
-            //execl("/usr/bin/uptime", "uptime", (char*)0);
-
-            syslog(LOG_ERR, "ruptimed: unexpected return from exec: %s", strerror(errno));
-        }
-        else
-        {
-            //parent
-            //close(clfd);
-            //waitpid(pid, &status, 0);
-        //}
-        printf("Process started\n");*/
-        /*get data from the pipe that reads created to exec /usr/bin/uptime */
-        //read the number of btyes of encoded image data
-        fgets(temp, 10, fp);
-        printf("Trying to send size\n");
-        send(clfd, temp, 10, 0);
-        //send(clfd, buf, strlen(buf),0);
-        //convert the string to int
-        size_t bytesToRead = atoi((char*)temp);
-        //allocate memory where to store encoded iamge data that will be received
-        u_char *buf = (u_char*)malloc(bytesToRead*sizeof(u_char));
-        printf("allocated: %s\n", temp);
-        printf("allocated (int): %lu\n", bytesToRead);
-        //initialize the number of bytes read to 0
-        //printf ("bytesToRead: %ld\n",bytesToRead);
-        printf("Trying to read...\n");
-        elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
-        printf("Read...\n");
-        printf("%lu\n", bytesToRead);
-        total_bytes_read += elRead*bytes2Copy;
-        bytes2Copy = bytesToRead-total_bytes_read;
-        elRead = fread ( buf+total_bytes_read, bytes2Copy, bytesToRead/bytes2Copy, fp);
-        total_bytes_read += elRead*bytes2Copy;
-        /*see popen pag. 542*/
-        printf("bytes read: %ld over %ld\n", total_bytes_read, bytesToRead);
-        pclose(fp);
-        while(bytes_sent<total_bytes_read)
-        {
-            //bytes_sent+=sendto(sockfd, buf+bytes_sent, BUFLEN,0, addr, alen);
-            bytes_sent+=send(clfd, buf+bytes_sent, BUFLEN,0);
-        }
-    }
-}
 
 void serve2(int sockfd)
 {
