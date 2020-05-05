@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     cv::Mat frame;
     char temp[10] ={0};
     size_t total_bytes;
-    unsigned short int elRead = 0;
+    unsigned long int elRead = 0;
     cv::namedWindow( "win", cv::WINDOW_AUTOSIZE );
     u_char *buf ;
     while(1)
@@ -32,9 +32,9 @@ int main(int argc, char *argv[])
 
         //initialize the number of bytes read to 0
         printf ("child process total_bytes: %ld\n",total_bytes);
-        if((elRead = fread(buf, total_bytes, 1, fp))!=1)
+        if((elRead = read(STDIN_FILENO, buf, total_bytes))!= total_bytes)
         {
-            printf("error elRead!=1, elRead=%ld\n", elRead);
+            printf("error elRead!=toatl_bytes, elRead=%ld\n", elRead);
             return 0;
         }
         std::vector<u_char> vec_img;

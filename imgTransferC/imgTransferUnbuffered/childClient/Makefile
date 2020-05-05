@@ -1,13 +1,15 @@
 CXX            := g++
 CXXFLAGS       := -std=c++11 -pg
 COMMONDIR_NAME := common
-COMMONDIR      := ../../$(COMMONDIR_NAME)
+COMMONDIR      := ../../../$(COMMONDIR_NAME)
 INC_PATH       := `pkg-config --cflags opencv4` -I$(COMMONDIR)
 LIBS           := `pkg-config --libs opencv4`
 BUILD_DIR_NAME := build
-BUILDDIR       := ../../$(BUILD_DIR_NAME)
+BUILDDIR       := ../../../$(BUILD_DIR_NAME)
+IMG_TNSF_BUILD := $(notdir $(abspath $(CURDIR)/../..))
 APP_NAME       := $(notdir $(abspath $(CURDIR)/..))
-APP_BUILDDIR   := $(BUILDDIR)/$(APP_NAME)
+IMG_TNF_BLDDIR := $(BUILDDIR)/$(IMG_TNSF_BUILD)
+APP_BUILDDIR   := $(IMG_TNF_BLDDIR)/$(APP_NAME)
 #this works as well CURR_DIR_NAME  := $(notdir $(CURDIR))
 CURR_DIR_NAME  := $(shell basename $(CURDIR))
 SOURCEDIR      := ./
@@ -24,7 +26,7 @@ COMMONLIB      := $(LIBDIR)/$(LIBNAME)
 # ADD MORE WARNINGS!
 WARNING := -Wall -Wextra
 
-EXECUTABLE := openCV
+EXECUTABLE := ../openCVUnbufferedClient
 
 # .PHONY means these rules get executed even if
 # files of those names exist.
@@ -49,6 +51,9 @@ $(OBJDIR):
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
+
+$(IMG_TNF_BLDDIR):
+	mkdir -p $(IMG_TNF_BLDDIR)
 
 $(APP_BUILDDIR):
 	mkdir -p $(APP_BUILDDIR)

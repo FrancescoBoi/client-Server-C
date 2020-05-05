@@ -1,7 +1,6 @@
 #include <unistd.h> //STDOUT_FILENO
 #include "opencv2/opencv.hpp"
 #include <iostream>
-//#include <sys/types.h>
 #include <fcntl.h>
 #include "constants.h"
 using namespace std;
@@ -15,8 +14,9 @@ int main(int argc, char *argv[])
 
     //read image as grayscale
     namedWindow( "Camera", WINDOW_AUTOSIZE );
-    //sTAMPA stringhe che potrebbero incasinare tutto il resto: in un altro
-    //programa avevo dirottato l'stdout
+    //Before starting the camera redirect the STDOUT to null
+    // since when starting the camera OpenCV prints undesired
+	//characters
     fflush(stdout);
     bak = dup(1);
     temp = open("/dev/null", O_WRONLY);
@@ -28,11 +28,6 @@ int main(int argc, char *argv[])
         cout << "\nCould not open reference " << 0 << endl;
         return -1;
     }
-    //for (int i=0; i<2; i++)
-    //{
-        //cam>>frame;
-    //}
-    //frame = imread("/home/fra/Desktop/imgTransferC/childP/test2.png",0);
     /*Set the normal STDOUT back*/
     fflush(stdout);
     dup2(bak, 1);

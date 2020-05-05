@@ -182,7 +182,7 @@ void serveConnectionless(int sockfd)
         returns a file pointer (connected to std output if "r", to stdin if "w").
         pclose closes the stream, waits for the command to terminate*/
         printf("Trying to fork\n");
-        if ((fp = popen("../imgTransferC/childP/openCV", "r")) == NULL)
+        if ((fp = popen("./../imgTransferC/imgTransferBuffered/openCVBufferedServer", "r")) == NULL)
         {
             /*sprintf copy the string passed as second parameter inside buf*/
             sprintf(buf, "error: %s\n", strerror(errno));

@@ -1,9 +1,9 @@
 //#include "apue.h"
 #include <netdb.h>
 #include <stdlib.h>
-#include<stdio.h>
+#include <stdio.h>
 #include <string.h>
-#include<unistd.h>
+#include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include "error.h"
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         printf("malloc error\n");
         exit(1);
     }
-    if (gethostname(host, n)<0)
+    if (gethostname(host, n)<0)//this is obsolete and must be changed
     {
       printf("gethostname error\n");
       exit(1);
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            if ((fp = popen("../imgTransferC/childDB/openCVClient", "w")) == NULL)
+            if ((fp = popen("./../imgTransferC/imgTransferBuffered/openCVBufferedClient", "w")) == NULL)
             {
                 //error
                 printf("forkin error\n");

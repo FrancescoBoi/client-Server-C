@@ -127,7 +127,8 @@ int main(int argc, char* argv[])
        be required.
 
        Either node or service, but not both, may be NULL.*/
-    if((err = getaddrinfo(NULL, "60185", &hint, &ailist))!=0)
+    //if((err = getaddrinfo(NULL, "60185", &hint, &ailist))!=0)
+    if((err = getaddrinfo(host, "ruptime", &hint, &ailist))!=0)
     {
         printf("Error line 129 %d\n", err);
         syslog(LOG_ERR, "ruptimed: getaddrinfo error %s", gai_strerror(err));

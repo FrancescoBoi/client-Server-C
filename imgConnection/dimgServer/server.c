@@ -1,10 +1,10 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h> //_SC_HOST_NAME_MAX
-#include<string.h>
-#include<netdb.h> //Here are defined AF_INET and the others of the family
-#include<syslog.h> //LOG_ERR
-#include<errno.h> //errno
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h> //_SC_HOST_NAME_MAX
+#include <string.h>
+#include <netdb.h> //Here are defined AF_INET and the others of the family
+#include <syslog.h> //LOG_ERR
+#include <errno.h> //errno
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -60,35 +60,36 @@ int main(int argc, char* argv[])
         printf("malloc error\n");
         exit(1);
     }
+    /*OBSOLETE
     if (gethostname(host, n)<0)
     {
         printf("gethostname error\n");
         exit(1);
-    }
+    }*/
     printf("Daemonizing\n");
     //daemonize("ruptimed");
     //printf("Daemonized\n");
-    /*       The hints argument points to an addrinfo structure that specifies
+    /* The hints argument points to an addrinfo structure that specifies
        criteria for selecting the socket address structures returned in the
-       list pointed to by res.  If hints is not NULL it points to an
+       list pointed to by res. If hints is not NULL it points to an
        addrinfo structure whose ai_family, ai_socktype, and ai_protocol
        specify criteria that limit the set of socket addresses returned by
        getaddrinfo(), as follows:
 
        ai_family   This field specifies the desired address family for the
-                   returned addresses.  Valid values for this field include
-                   AF_INET and AF_INET6.  The value AF_UNSPEC indicates that
+                   returned addresses. Valid values for this field include
+                   AF_INET and AF_INET6. The value AF_UNSPEC indicates that
                    getaddrinfo() should return socket addresses for any
                    address family (either IPv4 or IPv6, for example) that
                    can be used with node and service.
 
        ai_socktype This field specifies the preferred socket type, for exam‐
-                   ple SOCK_STREAM or SOCK_DGRAM.  Specifying 0 in this
+                   ple SOCK_STREAM or SOCK_DGRAM. Specifying 0 in this
                    field indicates that socket addresses of any type can be
                    returned by getaddrinfo().
 
        ai_protocol This field specifies the protocol for the returned socket
-                   addresses.  Specifying 0 in this field indicates that
+                   addresses. Specifying 0 in this field indicates that
                    socket addresses with any protocol can be returned by
                    getaddrinfo().
 
@@ -136,7 +137,7 @@ int main(int argc, char* argv[])
        be required.
 
        Either node or service, but not both, may be NULL.*/
-    if((err = getaddrinfo(NULL, "60185", &hint, &ailist))!=0)
+    if((err = getaddrinfo(host, "60185", &hint, &ailist))!=0)
     {
         printf("Error line 129 %d\n", err);
         syslog(LOG_ERR, "ruptimed: getaddrinfo error %s", gai_strerror(err));
@@ -265,8 +266,7 @@ void serveImg(int sockfd)
         }
         //if ((pid = fork())<0)
         //FILE * custom_popen(char* command, char type, pid_t* pid);
-        if ((fp = custom_popen("../imgTransferC/childP/openCV", 'r', &pid_openCV)) == NULL)
-        //if ((fp = popen("./imgTransferC/childP/openCV", "r")) == NULL)
+        if ((fp = custom_popen("./../imgTransferC/imgTransferBuffered/openCVBufferedServer", 'r', &pid_openCV)) == NULL)
         {
             printf("error custom_opening\n");
             syslog(LOG_ERR, "ruptimed: fork error: %s", strerror(errno));

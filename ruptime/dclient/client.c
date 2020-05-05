@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     struct addrinfo hint;
     int     sockfd, err;
     int n;
-    if (argc != 2)//not needed any more but keep it for consistency
+    if (argc != 2)
         err_quit("usage: ruptime hostname");
     if ((n = sysconf(_SC_HOST_NAME_MAX))<0)
     {
@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
     hint.ai_addr = NULL;
     hint.ai_next = NULL;
     //if ((err = getaddrinfo(argv[1], "60185", &hint, &ailist)) != 0)
+    if((err = getaddrinfo(host, "ruptime", &hint, &ailist))!=0)
     if ((err = getaddrinfo("127.0.0.1", "60185", &hint, &ailist)) != 0)
         err_quit("getaddrinfo error: %s", gai_strerror(err));
     for (aip = ailist; aip != NULL; aip = aip->ai_next)

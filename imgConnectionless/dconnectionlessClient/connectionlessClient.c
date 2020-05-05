@@ -98,7 +98,7 @@ void print_uptime(int sockfd, struct addrinfo *aip)
    FILE *fp;
    buf[0] = 0;
    printf("Forking...\n");
-   if ((fp = popen("../imgTransferC/childDB/openCV", "w")) == NULL)
+   if ((fp = popen("./../imgTransferC/imgTransferBuffered/openCVBufferedClient", "w")) == NULL)
    {
        //error
        printf("forkin error\n");
